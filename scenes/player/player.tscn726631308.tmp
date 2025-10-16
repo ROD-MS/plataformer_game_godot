@@ -1,0 +1,31 @@
+[gd_scene load_steps=4 format=3 uid="uid://byg70l4n10ap6"]
+
+[ext_resource type="Script" uid="uid://dnx4oxla2bqjb" path="res://assets/scripts/player.gd" id="1_8afob"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_dovo2"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_8afob"]
+size = Vector2(16.5, 20)
+
+[node name="player" type="CharacterBody2D"]
+script = ExtResource("1_8afob")
+has_acceleration = true
+has_run = true
+has_dash = true
+has_melee = true
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_dovo2")
+
+[node name="dash_timer" type="Timer" parent="."]
+one_shot = true
+
+[node name="melle_attack_collision" type="Area2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="melle_attack_collision"]
+position = Vector2(20, 0)
+shape = SubResource("RectangleShape2D_8afob")
+debug_color = Color(0.971741, 0, 0.445871, 0.42)
+
+[connection signal="body_entered" from="melle_attack_collision" to="." method="_on_melle_attack_collision_body_entered"]
+[connection signal="body_exited" from="melle_attack_collision" to="." method="_on_melle_attack_collision_body_exited"]
