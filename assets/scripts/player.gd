@@ -180,8 +180,14 @@ func damage(attack: Attack, _enemy: Enemy):
 		get_tree().reload_current_scene()
 			
 func animation_sysyem():
+	# FLIP CHARACTER
+	if last_direction > 0:
+		animation.flip_h = false
+	elif last_direction < 0:
+		animation.flip_h = true
+	
 	if !hitted:
-		if velocity == Vector2.ZERO:
+		if velocity == Vector2.ZERO and !attacked:
 			animation.play("idle")
 			
 		if dashing:
@@ -189,11 +195,10 @@ func animation_sysyem():
 			await animation.animation_finished
 			dashing = false
 			
-		elif Input.is_action_just_pressed("attack") and !attacked and !hitted:
+		elif attacked:
 			animation.play("attack")
 			await animation.animation_finished
 			attacked = false
-			print(attacked)
 			
 		else:
 				
@@ -218,6 +223,3 @@ func animation_sysyem():
 		hitted = false
 		
 	
-		
-		
-			
