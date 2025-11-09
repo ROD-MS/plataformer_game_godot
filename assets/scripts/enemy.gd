@@ -2,9 +2,9 @@ extends CharacterBody2D
 class_name Enemy
 
 @onready var knockback_timer: Timer = $knockback_timer
-@onready var stun_timer: Timer = $stun_timer
 @onready var repeat_move_timer: Timer = $repeat_move_timer
 @onready var charge_attack_timer: Timer = $charge_attack
+@onready var animation: AnimatedSprite2D = $animation
 
 @export var max_health := 20.0
 
@@ -20,7 +20,7 @@ class_name Enemy
 @export_category("Attacks")
 @export var DAMAGE := 5.0
 @export var KNOCKBACK := 0.0
-@export var STUN_TIME := 0.0 # STUN CANCEL KNOCKBACK
+var STUN_TIME := 0.0
 @export var charge_attack := 1.0 # Time to attack
 
 var health: float
@@ -32,6 +32,8 @@ var direction := 1
 var detected := false
 var can_attack := false
 var attack := false
+var attacked := false
+var hitted := false
 
 func _ready() -> void:
 	for child in get_owner().get_children():
@@ -44,37 +46,38 @@ func _ready() -> void:
 	repeat_move_timer.start(time_to_change_move)
 
 func _physics_process(delta: float) -> void:
-	if not is_on_floor():
-		velocity += get_gravity() * delta
-		
-	if stun_timer.time_left > 0.0:
-		velocity = Vector2.ZERO
+
 		
 	if knockback_timer.time_left <= 0.0:
-		velocity = Vector2.ZERO
-		
-	moves_set(delta)
+		moves_set(delta)
+
+	if not is_on_floor():
+		velocity += get_gravity() * delta
+
+	animation_sysyem()
 
 	move_and_slide()
+
+
 	
 func moves_set(delta: float):
 	if follow_player:
 		if detected:
 			var direction = sign(player.global_position.x - global_position.x)
 			velocity.x = direction * SPEED
+		else:
+			velocity.x = 0
 			
 		if can_attack:
-			#print("A")
 			if charge_attack_timer.is_stopped():
 				charge_attack_timer.start(charge_attack)
 			
-			if attack:
+			if attack and !attacked:
 				var _attack: Attack = Attack.new()
 				_attack.damage = DAMAGE
 				_attack.knockback = KNOCKBACK
-				_attack.stun_time = STUN_TIME
 				player.damage(_attack, self)
-				attack = false
+				attacked = true
 				
 	elif repeat_move:
 		if repeat_move_timer.time_left <= 0.0:
@@ -83,17 +86,15 @@ func moves_set(delta: float):
 		
 		if can_attack:
 			repeat_move_timer.paused = true
-			#print("A")
 			if charge_attack_timer.is_stopped():
 				charge_attack_timer.start(charge_attack)
 			
-			if attack:
+			if attack and !attacked:
 				var _attack: Attack = Attack.new()
 				_attack.damage = DAMAGE
 				_attack.knockback = KNOCKBACK
-				_attack.stun_time = STUN_TIME
 				player.damage(_attack, self)
-				attack = false
+				attacked = true
 				
 			velocity.x = 0
 				
@@ -104,20 +105,38 @@ func moves_set(delta: float):
 	elif idle_moves:
 		if detected:
 			if can_attack:
-				#print("A")
 				if charge_attack_timer.is_stopped():
 					charge_attack_timer.start(charge_attack)
 				
-				if attack:
+				if attack and !attacked:
 					var _attack: Attack = Attack.new()
 					_attack.damage = DAMAGE
 					_attack.knockback = KNOCKBACK
-					_attack.stun_time = STUN_TIME
 					player.damage(_attack, self)
-					attack = false
+					attacked = true
 	
+func animation_sysyem():
+	if !hitted:
+		if velocity == Vector2.ZERO and !attack:
+			animation.play("idle")
+		else:
+			if velocity.x != 0 and !attack:
+				animation.play("walk")
+	
+		if attack and attacked:
+			animation.play("attack")
+			await animation.animation_finished
+			attacked = false
+			attack = false
+			
+	if hitted:
+		animation.play("hit")
+		await animation.animation_finished
+		hitted = false
+		
 	
 func damage(attack: Attack, _player: Player):
+	hitted = true
 	health -= attack.damage
 	
 	# Knockback
@@ -128,18 +147,9 @@ func damage(attack: Attack, _player: Player):
 	
 	velocity = knockback
 	
-	# Stun time
-	var _stun_timer = attack.stun_time
-	
-	if _stun_timer != 0.0:
-		stun_timer.start(_stun_timer)
-	
 	if health <= 0:
 		queue_free()
 
-
-func _on_stun_timer_timeout() -> void:
-	print("free")
 	
 func _on_charge_attack_timeout() -> void:
 	if can_attack:
@@ -162,3 +172,7 @@ func _on_player_near_body_entered(body: Node2D) -> void:
 func _on_player_near_body_exited(body: Node2D) -> void:
 	if body is Player:
 		can_attack = false
+
+
+func _on_knockback_timer_timeout() -> void:
+	velocity = Vector2.ZERO

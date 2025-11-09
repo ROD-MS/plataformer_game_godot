@@ -427,14 +427,6 @@ animations = [{
 
 [node name="player" type="CharacterBody2D"]
 script = ExtResource("1_8afob")
-has_acceleration = true
-has_run = true
-has_dash = true
-has_shoot = true
-aim_in_mouse = true
-SHOOT_KNOCKBACK = 50.0
-has_melee = true
-MELEE_KNOCKBACK = 200.0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("RectangleShape2D_dovo2")
@@ -458,11 +450,10 @@ zoom = Vector2(2, 2)
 
 [node name="knockback_timer" type="Timer" parent="."]
 
-[node name="stun_timer" type="Timer" parent="."]
-
 [node name="animation" type="AnimatedSprite2D" parent="."]
 sprite_frames = SubResource("SpriteFrames_8afob")
-animation = &"attack"
+animation = &"idle"
 
 [connection signal="body_entered" from="melle_attack_collision" to="." method="_on_melle_attack_collision_body_entered"]
 [connection signal="body_exited" from="melle_attack_collision" to="." method="_on_melle_attack_collision_body_exited"]
+[connection signal="timeout" from="knockback_timer" to="." method="_on_knockback_timer_timeout"]

@@ -9,7 +9,6 @@ var last_direction: int = 1
 var knockback := Vector2.ZERO
 var knockback_duration := 0.0
 @onready var knockback_timer: Timer = $knockback_timer
-@onready var stun_timer: Timer = $stun_timer
 
 @onready var dash_timer: Timer = $dash_timer
 @onready var melle_attack_collision: Area2D = $melle_attack_collision
@@ -45,18 +44,15 @@ var enemy_detected: Enemy = null
 @export var has_shoot := false
 const BULLET = preload("res://scenes/player/bullet.tscn") # You can change this if you want, but make a node bullet type
 # The damage and other configs must be configured in the bullet node
-@export var eight_direction := false
 @export var aim_in_mouse := false # if eight_direction is active, this variable won't work
 # If just "has_shoot" is active, the Player will shoot justa 4 directions (up, down, left, right)
 @export var SHOOT_DAMAGE := 5.0
 @export var SHOOT_KNOCKBACK := 0.0
-@export var SHOOT_STUN_TIME := 0.0 # STUN CANCEL KNOCKBACK
 
 @export_group("Melee")
 @export var has_melee = false
 @export var MELEE_DAMAGE := 5.0
 @export var MELEE_KNOCKBACK := 0.0
-@export var MELEE_STUN_TIME := 0.0 # STUN CANCEL KNOCKBACK
 
 func _ready() -> void:
 	health = max_health
@@ -76,7 +72,6 @@ func _physics_process(delta: float) -> void:
 	shoot_attack(delta)
 	animation_sysyem()
 
-	#print(dash_timer.time_left)
 	move_and_slide()
 	
 func move(delta: float):
@@ -122,7 +117,6 @@ func melee_attack(delta: float):
 				var attack: Attack = Attack.new()
 				attack.damage = MELEE_DAMAGE
 				attack.knockback = MELEE_KNOCKBACK
-				attack.stun_time = MELEE_STUN_TIME
 				enemy_detected.damage(attack, self)
 			attacked = true
 		
@@ -144,13 +138,10 @@ func shoot_attack(delta: float):
 			_bullet.global_position = global_position
 			_bullet.damage = SHOOT_DAMAGE
 			_bullet.knockback = SHOOT_KNOCKBACK
-			_bullet.stun_time = SHOOT_STUN_TIME
 			_bullet.player = self
 			
 			if aim_in_mouse:
 				_bullet.look_at(aim_shoot.global_position)
-			elif eight_direction:
-				print("8 dir")
 			else:
 				_bullet.rotate(deg_to_rad((last_direction * 90) - 90))
 				
@@ -160,8 +151,6 @@ func damage(attack: Attack, _enemy: Enemy):
 	hitted = true
 	health -= attack.damage
 	
-	print(health)
-	
 	# Knockback
 	var knockback_direction = -(_enemy.global_position - global_position).normalized()
 	knockback = knockback_direction * attack.knockback
@@ -170,11 +159,6 @@ func damage(attack: Attack, _enemy: Enemy):
 	
 	velocity = knockback
 	
-	# Stun time
-	var _stun_timer = attack.stun_time
-	
-	if _stun_timer != 0.0:
-		stun_timer.start(_stun_timer)
 	
 	if health <= 0:
 		get_tree().reload_current_scene()
@@ -223,3 +207,5 @@ func animation_sysyem():
 		hitted = false
 		
 	
+func _on_knockback_timer_timeout() -> void:
+	velocity = Vector2.ZERO
